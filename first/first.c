@@ -30,6 +30,27 @@ void read(struct Node **graph, int vertices){
   return;
 }
 
+void degree(struct Node** graph,int vertices,char* letter){
+  for (size_t i = 0; i < vertices; i++) {
+    if(strcmp(letter,graph[i]->letter)==0){
+      int count=0;
+      for (struct Node* current = graph[i]; current!=0; current=current->next) count++;
+      printf("%d\n",count);
+      return;
+    }
+  }
+}
+
+void adjacent(struct Node** graph,int vertices,char* letter){
+  for (size_t i = 0; i < vertices; i++) {
+    if(strcmp(letter,graph[i]->letter)==0){
+      for (struct Node* current = graph[i]; current!=0; current=current->next) printf("%s\t", current->letter);
+      printf("\n");
+      return;
+    }
+  }
+}
+
 int main(int argc, char *argv[argc+1]) {
   if (argc>3 || argc==1) {
     printf("Please enter 1 file name.\n");
@@ -59,10 +80,10 @@ int main(int argc, char *argv[argc+1]) {
   //read(graph,vertices);
 
 
-  char from[2],to[2];
-  while ((fscanf(f,"%s %s",from,to))!=EOF){
+  char source[2],to[2];
+  while ((fscanf(f,"%s %s",source,to))!=EOF){
     for (size_t i = 0; i < vertices; i++) {
-      if (strcmp(from,graph[i]->letter)==0) {
+      if (strcmp(source,graph[i]->letter)==0) {
         struct Node* current = graph[i];
         while(current->next!=0) current = current->next;
         current->next=calloc(1,sizeof(struct Node));
@@ -73,11 +94,19 @@ int main(int argc, char *argv[argc+1]) {
     }
   }
 
-  for (size_t i = 0; i < vertices; i++) {
-    for (struct Node* current = graph[i]; current!=0; current=current->next) {
-      printf("%s ", current->letter);
-    }
-    printf("\n");
+  f = fopen(argv[2],"r");
+  if (f==0) {
+    printf("error\n");
+    return EXIT_SUCCESS;
+  }
+
+  char decision[2];
+  while((fscanf(f,"%s %s", decision,source))!=EOF) {
+    if(strcmp(decision,"d")==0) {
+      degree(graph,vertices,source);
+    } else{ if(strcmp(decision,"a")==0){
+      adjacent(graph,vertices,source);
+    }}
   }
 
   freeEverything(graph,vertices);
