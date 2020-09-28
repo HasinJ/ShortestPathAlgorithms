@@ -11,13 +11,13 @@ void freeLinkedList(struct Node* x){
   if (x==0) return;
   freeLinkedList(x->next);
   free(x->letter);
+  free(x);
   return;
 }
 
 void freeEverything(struct Node** graph,int vertices){
   for (size_t i = 0; i < vertices; i++) {
     freeLinkedList(graph[i]);
-    free(graph[i]);
   }
   free(graph);
 }
@@ -64,12 +64,11 @@ int main(int argc, char *argv[argc+1]) {
     for (size_t i = 0; i < vertices; i++) {
       if (strcmp(from,graph[i]->letter)==0) {
         struct Node* current = graph[i];
-        while()
-        printf("setting next\n");
-        graph[i]->next=calloc(1,sizeof(struct Node));
-        graph[i]->next->letter=malloc(2);
-        strcpy(graph[i]->next->letter,to);
-        graph[i]->next->next=0;
+        while(current->next!=0) current = current->next;
+        current->next=calloc(1,sizeof(struct Node));
+        current->next->letter=malloc(2);
+        strcpy(current->next->letter,to);
+        current->next->next=0;
       }
     }
   }
