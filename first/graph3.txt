@@ -1,0 +1,71 @@
+20
+A
+B
+C
+D
+E
+F
+G
+H
+I
+J
+K
+L
+M
+N
+O
+P
+Q
+R
+S
+T
+M I
+L M
+G H
+G M
+H D
+B T
+K I
+E O
+C E
+L E
+H S
+K A
+B I
+G S
+D M
+J E
+I B
+A E
+J O
+F P
+I D
+T H
+N L
+P F
+E C
+I C
+S K
+Q H
+H J
+Q I
+Q C
+A C
+J F
+C T
+G E
+E P
+R P
+O P
+H Q
+J P
+B S
+D I
+L C
+E L
+E B
+G A
+B J
+R A
+B P
+F G

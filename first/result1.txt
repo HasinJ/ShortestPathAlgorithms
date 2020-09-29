@@ -1,5 +1,5 @@
-B D E
+B D E adjacent A
 A B C
 4
-B D E
+B D E adjacent C
 A B C
