@@ -10,8 +10,8 @@ struct Node{
 };
 
 int compareString(char* a, char* b){
-  if (strlen(a)>strlen(b)) return 1;
-  if (strlen(a)<strlen(b)) return 0;
+  if (strlen(a)>strlen(b)) return 0;
+  if (strlen(a)<strlen(b)) return 1;
   if (a==b) return 1;
 
   for (size_t i = 0; i < strlen(a); i++) {

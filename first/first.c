@@ -8,8 +8,8 @@ struct Node{
 };
 
 int compareString(char* a, char* b){
-  if (strlen(a)>strlen(b)) return 1;
-  if (strlen(a)<strlen(b)) return 0;
+  if (strlen(a)>strlen(b)) return 0;
+  if (strlen(a)<strlen(b)) return 1;
   if (a==b) return 1;
 
   for (size_t i = 0; i < strlen(a); i++) {
@@ -42,7 +42,7 @@ void addNode(struct Node** graph, int vertices, struct Node* current, char* to) 
   }
 
   while(current->next!=0) {
-    if (compareString(current->next->letter,to)==1) {
+    if (compareString(current->next->letter,to)==1) { //flipping this swaps the list around
       insertHere(current,to);
       return;
     }
