@@ -2,9 +2,16 @@
 #include<stdlib.h>
 #include<string.h>
 
-struct Node{
+struct Vertex{
   char *letter;
-  struct Node* next;
+  struct Edge* next;
+
+};
+
+struct Edge{
+  //int weight;
+  char* letter;
+  struct Edge* next;
 };
 
 int compareString(char* a, char* b){
@@ -23,24 +30,23 @@ int compareString(char* a, char* b){
 }
 
 
-void insertHere(struct Node* current, char* character){
-  struct Node* new = malloc(sizeof(struct Node));
-  new->letter=malloc(20);
+void insertHere(struct Edge* current, char* character){
+  struct Edge* new = malloc(sizeof(struct Edge));
+  new->letter=malloc(20*sizeof(char*));
   strcpy(new->letter,character);
   new->next = current->next;
   current->next=new;
 }
 
-void addNode(struct Node** graph, int vertices, struct Node* current, char* to) {
-  struct Node* head=current->next;
-  if(head==0){
-    current->next=malloc(sizeof(struct Node));
-    current->next->letter=malloc(20);
-    strcpy(current->next->letter,to);
-    current->next->next=0;
+void addNode(struct Vertex** graph, int vertices, struct Vertex* vertex, char* to) {
+  if(vertex->next==0){ //head
+    vertex->next=malloc(sizeof(struct Edge));
+    vertex->next->letter=malloc(20*sizeof(char*));
+    strcpy(vertex->next->letter,to);
+    vertex->next->next=0;
     return;
   }
-
+  struct Edge* current=vertex->next; //set current as head
   while(current->next!=0) {
     if (compareString(current->next->letter,to)==1) { //flipping this swaps the list around
       insertHere(current,to);
@@ -48,28 +54,37 @@ void addNode(struct Node** graph, int vertices, struct Node* current, char* to) 
     }
     current = current->next;
   }
-  current->next=malloc(sizeof(struct Node));
-  current->next->letter=malloc(20);
+  current->next=malloc(sizeof(struct Edge));
+  current->next->letter=malloc(20*sizeof(char*));
   strcpy(current->next->letter,to);
   current->next->next=0;
 }
 
-void freeLinkedList(struct Node* x){
+void freeEdges(struct Edge* x){
   if (x==0) return;
-  freeLinkedList(x->next);
+  freeEdges(x->next);
   free(x->letter);
   free(x);
   return;
 }
 
-void freeEverything(struct Node** graph,int vertices){
+void freeVertex(struct Vertex* x){
+  if (x==0) return;
+  freeEdges(x->next);
+  free(x->letter);
+  free(x);
+  return;
+
+}
+
+void freeEverything(struct Vertex** graph,int vertices){
   for (size_t i = 0; i < vertices; i++) {
-    freeLinkedList(graph[i]);
+    freeVertex(graph[i]);
   }
   free(graph);
 }
 
-void read(struct Node **graph, int vertices){
+void read(struct Vertex **graph, int vertices){
   printf("\n");
   for (size_t i = 0; i < vertices; i++) {
     printf("%s", graph[i]->letter);
@@ -78,11 +93,11 @@ void read(struct Node **graph, int vertices){
   return;
 }
 
-void degree(struct Node** graph,int vertices,char* letter){
+void degree(struct Vertex** graph,int vertices,char* letter){
   for (size_t i = 0; i < vertices; i++) {
     if(strcmp(letter,graph[i]->letter)==0){
       int count=0;
-      for (struct Node* current = graph[i]->next; current!=0; current=current->next) {
+      for (struct Edge* current = graph[i]->next; current!=0; current=current->next) {
         count++;
       }
       printf("%d\n",count);
@@ -91,10 +106,10 @@ void degree(struct Node** graph,int vertices,char* letter){
   }
 }
 
-void adjacent(struct Node** graph,int vertices,char* letter){
+void adjacent(struct Vertex** graph,int vertices,char* letter){
   for (size_t i = 0; i < vertices; i++) {
     if(strcmp(letter,graph[i]->letter)==0){
-      for (struct Node* current = graph[i]->next; current!=0; current=current->next) {
+      for (struct Edge* current = graph[i]->next; current!=0; current=current->next) {
         printf("%s ", current->letter);
       }
       printf("\n");
@@ -116,17 +131,17 @@ int main(int argc, char *argv[argc+1]) {
   fscanf(f,"%d\n",&vertices);
 
   //intiliaze graph
-  struct Node **graph = calloc(vertices,sizeof(struct Node));
+  struct Vertex **graph = calloc(vertices,sizeof(struct Vertex));
   for (size_t i = 0; i < vertices; i++) {
-    struct Node* head=calloc(1, sizeof(struct Node));
+    struct Vertex* head=calloc(1, sizeof(struct Vertex));
     char content[20];
     fscanf(f,"%s\n",content);
-    head->letter=malloc(20);
+    head->letter=malloc(20*sizeof(char*));
     strcpy(head->letter,content);
     head->next=0;
     graph[i]=head;
   }
-  //read(graph,vertices);
+  read(graph,vertices);
 
 
   //add nodes
@@ -134,12 +149,12 @@ int main(int argc, char *argv[argc+1]) {
   while ((fscanf(f,"%s %s",source,to))!=EOF){
     for (size_t i = 0; i < vertices; i++) {
       if (strcmp(source,graph[i]->letter)==0) {
-        struct Node* current = graph[i];
+        struct Vertex* current = graph[i];
         addNode(graph,vertices,current,to);
       }
       //for undirection
       if (strcmp(to,graph[i]->letter)==0) {
-        struct Node* current = graph[i];
+        struct Vertex* current = graph[i];
         addNode(graph,vertices,current,source);
       }
     }
