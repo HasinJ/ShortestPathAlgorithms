@@ -119,6 +119,41 @@ void readAll(struct Vertex **graph, int vertices){
   }
   return;
 }
+
+void correspondingVertexTest(struct Vertex **graph, int vertices, char* source){
+  printf("\n");
+  for (size_t i = 0; i < vertices; i++) {
+    if(strcmp(graph[i]->letter,source)==0){
+      struct Edge* current = graph[i]->next;
+      while(current!=0){
+        printf("%s\n", current->vertex->letter);
+        current=current->next;
+      }
+    }
+  }
+}
+
+void fill(FILE* f, struct Vertex** graph, int vertices, char* source, char* to){
+  //add edges
+  struct Vertex* corr=0; //corresponding vertex
+  for (size_t i = 0; i < vertices; i++) {
+
+    if (strcmp(to,graph[i]->letter)==0) corr = graph[i];
+    if (strcmp(source,graph[i]->letter)==0) {
+      if(corr==0)  {
+        for (size_t j = i; j < vertices; j++) if (strcmp(to,graph[j]->letter)==0) corr = graph[j];
+      }
+      addEdge(graph[i],to,corr);
+
+      //undirected (does the same for the "to" vertex)
+      for (size_t j = 0; j < vertices; j++){
+        if (strcmp(to,graph[j]->letter)==0) {
+          addEdge(graph[j],source,graph[i]);
+          return;}}
+    }
+  }
+}
+
 /*
 void traverse(struct Vertex** graph, int vertices, char* source){
 
@@ -165,22 +200,10 @@ int main(int argc, char *argv[argc+1]) {
   //add edges
   char source[20],to[20];
   while ((fscanf(f,"%s %s",source,to))!=EOF){
-    for (size_t i = 0; i < vertices; i++) {
-      struct Vertex* corr=0; //corresponding vertex
-      if (strcmp(to,graph[i]->letter)==0) corr = graph[i];
-
-      if (strcmp(source,graph[i]->letter)==0) {
-        if(corr==0)  {
-          for (size_t j = i; j < vertices; j++) if (strcmp(to,graph[i]->letter)==0) corr = graph[j];
-        }
-        addEdge(graph[i],to,corr);
-        corr=graph[i];
-      }
-      //for undirection
-      if (strcmp(to,graph[i]->letter)==0) addEdge(graph[i],source,corr);
-    }
+    fill(f,graph,vertices,source, to);
   }
   readAll(graph,vertices);
+
   /*
   f = fopen(argv[2],"r");
   if (f==0) {
@@ -192,5 +215,6 @@ int main(int argc, char *argv[argc+1]) {
     traverse(graph,vertices,source);
   }
   */
+  correspondingVertexTest(graph,vertices,"B");
   freeEverything(graph,vertices);
 }
