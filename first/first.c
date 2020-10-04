@@ -15,8 +15,8 @@ struct Edge{
 };
 
 int compareString(char* a, char* b){
-  if (strlen(a)>strlen(b)) return 0;
-  if (strlen(a)<strlen(b)) return 1;
+  if (strlen(a)>strlen(b)) return 1;
+  if (strlen(a)<strlen(b)) return 0;
   if (a==b) return 1;
 
   for (size_t i = 0; i < strlen(a); i++) {
@@ -29,7 +29,6 @@ int compareString(char* a, char* b){
   return 0;
 }
 
-
 void insertHere(struct Edge* current, char* character){
   struct Edge* new = malloc(sizeof(struct Edge));
   new->letter=malloc(20*sizeof(char*));
@@ -38,14 +37,26 @@ void insertHere(struct Edge* current, char* character){
   current->next=new;
 }
 
-void addNode(struct Vertex** graph, int vertices, struct Vertex* vertex, char* to) {
+void insertHead(struct Vertex* current, char* character){
+  struct Edge* new = malloc(sizeof(struct Edge));
+  new->letter=malloc(20*sizeof(char*));
+  strcpy(new->letter,character);
+  new->next = current->next;
+  current->next=new;
+}
+
+void addNode(struct Vertex* vertex, char* to) {
   if(vertex->next==0){ //head
     vertex->next=malloc(sizeof(struct Edge));
     vertex->next->letter=malloc(20*sizeof(char*));
     strcpy(vertex->next->letter,to);
     vertex->next->next=0;
     return;
-  }
+  } else{ if(compareString(vertex->next->letter,to)==1){
+    insertHead(vertex,to);
+    return;
+  }}
+
   struct Edge* current=vertex->next; //set current as head
   while(current->next!=0) {
     if (compareString(current->next->letter,to)==1) { //flipping this swaps the list around
@@ -74,7 +85,6 @@ void freeVertex(struct Vertex* x){
   free(x->letter);
   free(x);
   return;
-
 }
 
 void freeEverything(struct Vertex** graph,int vertices){
@@ -141,7 +151,7 @@ int main(int argc, char *argv[argc+1]) {
     head->next=0;
     graph[i]=head;
   }
-  read(graph,vertices);
+  //read(graph,vertices);
 
 
   //add nodes
@@ -150,12 +160,12 @@ int main(int argc, char *argv[argc+1]) {
     for (size_t i = 0; i < vertices; i++) {
       if (strcmp(source,graph[i]->letter)==0) {
         struct Vertex* current = graph[i];
-        addNode(graph,vertices,current,to);
+        addNode(current,to);
       }
       //for undirection
       if (strcmp(to,graph[i]->letter)==0) {
         struct Vertex* current = graph[i];
-        addNode(graph,vertices,current,source);
+        addNode(current,source);
       }
     }
   }

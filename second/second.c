@@ -2,16 +2,23 @@
 #include<stdlib.h>
 #include<string.h>
 
-struct Node{
+struct Vertex{
   char *letter;
-  struct Node* next;
-  struct Node* prev;
+  struct Edge* next;
+  struct Edge* prev;
 
 };
 
+struct Edge{
+  int weight;
+  char* letter;
+  struct Edge* next;
+  struct Edge* prev;
+};
+
 int compareString(char* a, char* b){
-  if (strlen(a)>strlen(b)) return 0;
-  if (strlen(a)<strlen(b)) return 1;
+  if (strlen(a)>strlen(b)) return 1;
+  if (strlen(a)<strlen(b)) return 0;
   if (a==b) return 1;
 
   for (size_t i = 0; i < strlen(a); i++) {
@@ -25,81 +32,102 @@ int compareString(char* a, char* b){
 }
 
 
-void insertHere(struct Node* current, char* character){
-  struct Node* new = malloc(sizeof(struct Node));
-  new->letter=malloc(20);
+void insertHere(struct Edge* current, char* character){
+  struct Edge* new = malloc(sizeof(struct Edge));
+  new->letter=malloc(20*sizeof(char*));
   strcpy(new->letter,character);
   new->next = current->next;
   current->next=new;
 }
 
-void addNext(struct Node* current, char* to) {
-  struct Node* head=current->next;
-  if(head==0){
-    current->next=malloc(sizeof(struct Node));
-    current->next->letter=malloc(20);
-    strcpy(current->next->letter,to);
-    current->next->next=0;
-    return;
-  }
+void insertHead(struct Vertex* current, char* character){
+  struct Edge* new = malloc(sizeof(struct Edge));
+  new->letter=malloc(20*sizeof(char*));
+  strcpy(new->letter,character);
+  new->next = current->next;
+  current->next=new;
+}
 
+void addNext(struct Vertex* vertex, char* to) {
+  if(vertex->next==0){ //head
+    vertex->next=malloc(sizeof(struct Edge));
+    vertex->next->letter=malloc(20*sizeof(char*));
+    strcpy(vertex->next->letter,to);
+    vertex->next->next=0;
+    return;
+  } else{ if(compareString(vertex->next->letter,to)==1){
+    insertHead(vertex,to);
+    return;
+  }}
+
+  struct Edge* current=vertex->next; //set current as head
   while(current->next!=0) {
-    if (compareString(current->next->letter,to)==1) {
+    if (compareString(current->next->letter,to)==1) { //flipping this swaps the list around
       insertHere(current,to);
       return;
     }
     current = current->next;
   }
-  current->next=malloc(sizeof(struct Node));
-  current->next->letter=malloc(20);
+  current->next=malloc(sizeof(struct Edge));
+  current->next->letter=malloc(20*sizeof(char*));
   strcpy(current->next->letter,to);
   current->next->next=0;
 }
 
-void addPrev(struct Node* current, char* to) {
-  if(current->prev==0){
-    current->prev=malloc(sizeof(struct Node));
-    current->prev->letter=malloc(20);
-    strcpy(current->prev->letter,to);
-    current->prev->prev=0;
+void addPrev(struct Vertex* vertex, char* to) {
+  if(vertex->prev==0){ //head
+    vertex->prev=malloc(sizeof(struct Edge));
+    vertex->prev->letter=malloc(20*sizeof(char*));
+    strcpy(vertex->prev->letter,to);
+    vertex->prev->prev=0;
     return;
   }
 
+  struct Edge* current=vertex->prev; //set current as head
   while(current->prev!=0) {
     current = current->prev;
   }
-  current->prev=malloc(sizeof(struct Node));
-  current->prev->letter=malloc(20);
+  current->prev=malloc(sizeof(struct Edge));
+  current->prev->letter=malloc(20*sizeof(char*));
   strcpy(current->prev->letter,to);
   current->prev->prev=0;
 }
 
-void freeNextNodes(struct Node* x){
+void freeNextEdges(struct Edge* x){
   if (x==0) return;
-  freeNextNodes(x->next);
+  freeNextEdges(x->next);
   free(x->letter);
   free(x);
   return;
 }
 
-void freePrevNodes(struct Node* x){
+void freePrevEdges(struct Edge* x){
   if (x==0) return;
-  freePrevNodes(x->prev);
+  freePrevEdges(x->prev);
   free(x->letter);
   free(x);
   return;
 }
 
+void freeVertex(struct Vertex* x){
+  if (x==0) return;
+  freeNextEdges(x->next);
+  freePrevEdges(x->prev);
+  free(x->letter);
+  free(x);
+  return;
+}
 
-void freeEverything(struct Node** graph,int vertices){
+void freeEverything(struct Vertex** graph,int vertices){
   for (size_t i = 0; i < vertices; i++) {
-    freeNextNodes(graph[i]->next);
-    freePrevNodes(graph[i]);
+    freeVertex(graph[i]);
   }
   free(graph);
 }
 
-void read(struct Node **graph, int vertices){
+
+
+void read(struct Vertex **graph, int vertices){
   printf("\n");
   for (size_t i = 0; i < vertices; i++) {
     printf("%s", graph[i]->letter);
@@ -108,12 +136,12 @@ void read(struct Node **graph, int vertices){
   return;
 }
 
-void degree(struct Node** graph,int vertices,char* letter,char* decision){
+void degree(struct Vertex** graph,int vertices,char* letter,char* decision){
   for (size_t i = 0; i < vertices; i++) {
 
     if(decision[0]=='o' && strcmp(letter,graph[i]->letter)==0){
       int count=0;
-      for (struct Node* current = graph[i]->next; current!=0; current=current->next) {
+      for (struct Edge* current = graph[i]->next; current!=0; current=current->next) {
         count++;
       }
       printf("%d\n",count);
@@ -122,7 +150,7 @@ void degree(struct Node** graph,int vertices,char* letter,char* decision){
 
     if(decision[0]=='i' && strcmp(letter,graph[i]->letter)==0){
       int count=0;
-      for (struct Node* current = graph[i]->prev; current!=0; current=current->prev) {
+      for (struct Edge* current = graph[i]->prev; current!=0; current=current->prev) {
         count++;
       }
       printf("%d\n",count);
@@ -132,10 +160,10 @@ void degree(struct Node** graph,int vertices,char* letter,char* decision){
   }
 }
 
-void adjacent(struct Node** graph,int vertices,char* letter){
+void adjacent(struct Vertex** graph,int vertices,char* letter){
   for (size_t i = 0; i < vertices; i++) {
     if(strcmp(letter,graph[i]->letter)==0){
-      for (struct Node* current = graph[i]->next; current!=0; current=current->next) {
+      for (struct Edge* current = graph[i]->next; current!=0; current=current->next) {
         printf("%s ", current->letter);
       }
       printf("\n");
@@ -157,12 +185,12 @@ int main(int argc, char *argv[argc+1]) {
   fscanf(f,"%d\n",&vertices);
 
   //intiliaze graph
-  struct Node **graph = calloc(vertices,sizeof(struct Node));
+  struct Vertex **graph = calloc(vertices,sizeof(struct Vertex));
   for (size_t i = 0; i < vertices; i++) {
-    struct Node* head=calloc(1, sizeof(struct Node));
+    struct Vertex* head=calloc(1, sizeof(struct Vertex));
     char content[20];
     fscanf(f,"%s\n",content);
-    head->letter=malloc(20);
+    head->letter=malloc(20*sizeof(char*));
     strcpy(head->letter,content);
     head->next=0;
     graph[i]=head;
