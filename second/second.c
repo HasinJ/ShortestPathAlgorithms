@@ -32,53 +32,58 @@ int compareString(char* a, char* b){
 }
 
 
-void insertHere(struct Edge* current, char* character){
+void insertHere(struct Edge* current, char* character,int weight){
   struct Edge* new = malloc(sizeof(struct Edge));
   new->letter=malloc(20*sizeof(char*));
   strcpy(new->letter,character);
+  new->weight=weight;
   new->next = current->next;
   current->next=new;
 }
 
-void insertHead(struct Vertex* current, char* character){
+void insertHead(struct Vertex* current, char* character,int weight){
   struct Edge* new = malloc(sizeof(struct Edge));
   new->letter=malloc(20*sizeof(char*));
   strcpy(new->letter,character);
+  new->weight=weight;
   new->next = current->next;
   current->next=new;
 }
 
-void addNext(struct Vertex* vertex, char* to) {
+void addNext(struct Vertex* vertex, char* to, int weight) {
   if(vertex->next==0){ //head
     vertex->next=malloc(sizeof(struct Edge));
     vertex->next->letter=malloc(20*sizeof(char*));
     strcpy(vertex->next->letter,to);
+    vertex->next->weight=weight;
     vertex->next->next=0;
     return;
   } else{ if(compareString(vertex->next->letter,to)==1){
-    insertHead(vertex,to);
+    insertHead(vertex,to,weight);
     return;
   }}
 
   struct Edge* current=vertex->next; //set current as head
   while(current->next!=0) {
     if (compareString(current->next->letter,to)==1) { //flipping this swaps the list around
-      insertHere(current,to);
+      insertHere(current,to,weight);
       return;
     }
     current = current->next;
   }
   current->next=malloc(sizeof(struct Edge));
   current->next->letter=malloc(20*sizeof(char*));
+  current->next->weight=weight;
   strcpy(current->next->letter,to);
   current->next->next=0;
 }
 
-void addPrev(struct Vertex* vertex, char* to) {
+void addPrev(struct Vertex* vertex, char* to,int weight) {
   if(vertex->prev==0){ //head
     vertex->prev=malloc(sizeof(struct Edge));
     vertex->prev->letter=malloc(20*sizeof(char*));
     strcpy(vertex->prev->letter,to);
+    vertex->prev->weight=weight;
     vertex->prev->prev=0;
     return;
   }
@@ -90,6 +95,7 @@ void addPrev(struct Vertex* vertex, char* to) {
   current->prev=malloc(sizeof(struct Edge));
   current->prev->letter=malloc(20*sizeof(char*));
   strcpy(current->prev->letter,to);
+  current->prev->weight=weight;
   current->prev->prev=0;
 }
 
@@ -205,11 +211,11 @@ int main(int argc, char *argv[argc+1]) {
     for (size_t i = 0; i < vertices; i++) {
       //sets next
       if (strcmp(source,graph[i]->letter)==0) {
-        addNext(graph[i],to);
+        addNext(graph[i],to,weight);
       }
       //sets previous
       if (strcmp(to,graph[i]->letter)==0) {
-        addPrev(graph[i],source);
+        addPrev(graph[i],source,weight);
       }
     }
   }
