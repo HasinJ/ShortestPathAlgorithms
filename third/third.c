@@ -12,7 +12,7 @@ struct Edge{
   //int weight;
   char* letter;
   struct Edge* next;
-  struct Vertex* vertex; //vertex it corresponds with
+  struct Vertex* vertex; //vertex it corresponds with, to make traversal easier
 };
 
 int compareString(char* a, char* b){
@@ -30,38 +30,41 @@ int compareString(char* a, char* b){
   return 0;
 }
 
-void insertHere(struct Edge* current, char* character){
+void insertHere(struct Edge* current, char* character, struct Vertex* correspondingVertex){
   struct Edge* new = malloc(sizeof(struct Edge));
   new->letter=malloc(20*sizeof(char*));
   strcpy(new->letter,character);
+  new->vertex=correspondingVertex;
   new->next = current->next;
   current->next=new;
 }
 
-void insertHead(struct Vertex* current, char* character){
+void insertHead(struct Vertex* current, char* character, struct Vertex* correspondingVertex){
   struct Edge* new = malloc(sizeof(struct Edge));
   new->letter=malloc(20*sizeof(char*));
   strcpy(new->letter,character);
+  new->vertex=correspondingVertex;
   new->next = current->next;
   current->next=new;
 }
 
-void addNode(struct Vertex* vertex, char* to) {
+void addEdge(struct Vertex* vertex, char* to, struct Vertex* correspondingVertex) {
   if(vertex->next==0){ //head
     vertex->next=malloc(sizeof(struct Edge));
     vertex->next->letter=malloc(20*sizeof(char*));
     strcpy(vertex->next->letter,to);
+    vertex->next->vertex=correspondingVertex;
     vertex->next->next=0;
     return;
   } else{ if(compareString(vertex->next->letter,to)==1){
-    insertHead(vertex,to);
+    insertHead(vertex,to,correspondingVertex);
     return;
   }}
 
   struct Edge* current=vertex->next; //set current as head
   while(current->next!=0) {
     if (compareString(current->next->letter,to)==1) { //flipping this swaps the list around
-      insertHere(current,to);
+      insertHere(current,to,correspondingVertex);
       return;
     }
     current = current->next;
@@ -69,6 +72,7 @@ void addNode(struct Vertex* vertex, char* to) {
   current->next=malloc(sizeof(struct Edge));
   current->next->letter=malloc(20*sizeof(char*));
   strcpy(current->next->letter,to);
+  current->next->vertex=correspondingVertex;
   current->next->next=0;
 }
 
@@ -115,7 +119,24 @@ void readAll(struct Vertex **graph, int vertices){
   }
   return;
 }
+/*
+void traverse(struct Vertex** graph, int vertices, char* source){
 
+  for (size_t i = 0; i < vertices; i++) {
+    if (graph[i]->letter==source) {
+      printf("%s ", source);
+      int count=1;
+      break;
+    }
+  }
+
+  while (count!=vertices) {
+    count++;
+  }
+  printf("%d\n", count);
+
+}
+*/
 int main(int argc, char *argv[argc+1]) {
 
   FILE *f;
@@ -141,21 +162,35 @@ int main(int argc, char *argv[argc+1]) {
   }
   //read(graph,vertices);
 
-  //add nodes
+  //add edges
   char source[20],to[20];
   while ((fscanf(f,"%s %s",source,to))!=EOF){
     for (size_t i = 0; i < vertices; i++) {
+      struct Vertex* corr=0; //corresponding vertex
+      if (strcmp(to,graph[i]->letter)==0) corr = graph[i];
+
       if (strcmp(source,graph[i]->letter)==0) {
-        struct Vertex* current = graph[i];
-        addNode(current,to);
+        if(corr==0)  {
+          for (size_t j = i; j < vertices; j++) if (strcmp(to,graph[i]->letter)==0) corr = graph[j];
+        }
+        addEdge(graph[i],to,corr);
+        corr=graph[i];
       }
       //for undirection
-      if (strcmp(to,graph[i]->letter)==0) {
-        struct Vertex* current = graph[i];
-        addNode(current,source);
-      }
+      if (strcmp(to,graph[i]->letter)==0) addEdge(graph[i],source,corr);
     }
   }
   readAll(graph,vertices);
+  /*
+  f = fopen(argv[2],"r");
+  if (f==0) {
+    printf("error\n");
+    return EXIT_SUCCESS;
+  }
+
+  while (fscanf(f,"%s",source)!=EOF){
+    traverse(graph,vertices,source);
+  }
+  */
   freeEverything(graph,vertices);
 }
