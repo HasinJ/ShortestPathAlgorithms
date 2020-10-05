@@ -57,21 +57,6 @@ void Enqueue(struct Vertex* x){
   current->next->next = 0;
 }
 
-int compareString(char* a, char* b){
-  if (strlen(a)>strlen(b)) return 1;
-  if (strlen(a)<strlen(b)) return 0;
-  if (a==b) return 1;
-
-  for (size_t i = 0; i < strlen(a); i++) {
-    //printf("%c vs %c\n", a[i],b[i]);
-    if(a[i]==b[i]) continue;
-    if(a[i]>b[i]) return 1;
-    if(a[i]<b[i]) return 0;
-  }
-
-  return 0;
-}
-
 void insertHere(struct Edge* current, char* character, struct Vertex* correspondingVertex){
   struct Edge* new = malloc(sizeof(struct Edge));
   new->letter=malloc(20*sizeof(char*));
@@ -98,14 +83,17 @@ void addEdge(struct Vertex* vertex, char* to, struct Vertex* correspondingVertex
     vertex->next->vertex=correspondingVertex;
     vertex->next->next=0;
     return;
-  } else{ if(compareString(vertex->next->letter,to)==1){
+  } else{ if(strcmp(vertex->next->letter,to)>0){
+    if (strcmp(vertex->next->letter,to)==0) return;
     insertHead(vertex,to,correspondingVertex);
     return;
   }}
 
   struct Edge* current=vertex->next; //set current as head
+  if (strcmp(current->letter,to)==0) return;
   while(current->next!=0) {
-    if (compareString(current->next->letter,to)==1) { //flipping this swaps the list around
+    if (strcmp(current->next->letter,to)==0) return;
+    if (strcmp(current->next->letter,to)>0) { //flipping this swaps the list around
       insertHere(current,to,correspondingVertex);
       return;
     }
@@ -227,18 +215,26 @@ void traverse(struct Vertex** graph, int vertices, char* source){
         temp=temp->next;
       }
 
-      struct Node* current=qHead->next;
-      temp=current->vertex->next;
+      struct Node* current=qHead;
       while(qHead!=0) {
+        temp=current->vertex->next;
         while(temp!=0){
           if (temp->vertex->visited==0) {
+            //printf("\nEnqueue %s\n",temp->letter);
             Enqueue(temp->vertex);
             printf("%s ", temp->letter);
+            temp->vertex->visited=1;
+            temp=temp->next;
+            continue;
           }
-          temp=temp->next;
+          if (temp->vertex->visited==1) {
+            temp=temp->next;
+          }
         }
+        //printf("Dequeue: %s\n",current->vertex->letter);
         current=qHead->next;
         Dequeue();
+        //readQ();
       }
     printf("\n");
     return;
