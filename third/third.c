@@ -17,60 +17,33 @@ struct Edge{
 };
 
 struct Node{
-  char *letter;
+  struct Vertex* vertex;
   struct Node* next;
 };
 
 struct Node* qHead=0;
 
-void Delete(char* x){ //should deal with an already sorted list
-  if (qHead==0) return;
-  else{
-    if (strcmp(qHead->letter,x)==0) {
-      struct Node* temp=qHead;
-      qHead=qHead->next;
-      free(temp->letter);
-      free(temp);
-      return;
-    }
-  }
-
-  struct Node* current=qHead;
-  while (strcmp(current->next->letter,x)==1) {
-    current=current->next;
-    if (current->next==0) return;
-  }
-  struct Node* temp=current->next;
-  current->next=current->next->next;
-  free(temp->letter);
-  free(temp);
-
-}
-
-void Push(char* x){
+void Push(struct Vertex* x){
   if (qHead==0){
     qHead = calloc(1,sizeof(struct Node));
-    qHead->letter=malloc(20*sizeof(char*));
-    strcpy(qHead->letter,x);
+    qHead->vertex=x;
     return;
   }
   struct Node* new = (struct Node*) malloc(sizeof(struct Node));
-  new->letter=malloc(20*sizeof(char*));
-  strcpy(new->letter,x);
+  new->vertex=x;
   new->next=qHead;
   qHead=new;
 }
 
-void Pop(){
-  if(head==0) return;
-  struct Node* temp = head;
-  head=head->next;
-  free(temp->letter);
+void Dequeue(){
+  if(qHead==0) return;
+  struct Node* temp = qHead;
+  qHead=qHead->next;
   free(temp);
   return;
 }
 
-void Enqueue(char* x){
+void Enqueue(struct Vertex* x){
   if(qHead==0) {
     Push(x);
     return;
@@ -80,8 +53,7 @@ void Enqueue(char* x){
     current=current->next;
   }
   current->next = calloc(1,sizeof(struct Node));
-  current->next->letter=malloc(20*sizeof(char*));
-  strcpy(current->next->letter,x);
+  current->next->vertex=x;
   current->next->next = 0;
 }
 
@@ -190,6 +162,14 @@ void readAll(struct Vertex **graph, int vertices){
   return;
 }
 
+void readQ(){
+  printf("queue: ");
+  for (struct Node* current=qHead; current!=0;current=current->next) {
+    printf("%s ", current->vertex->letter);
+  }
+  printf("\n");
+}
+
 void correspondingVertexTest(struct Vertex **graph, int vertices, char* source){
   printf("\n");
   for (size_t i = 0; i < vertices; i++) {
@@ -226,48 +206,46 @@ void fill(FILE* f, struct Vertex** graph, int vertices, char* source, char* to){
   }
 }
 
+
 void reset(struct Vertex** graph, int vertices){
   for (size_t i = 0; i < vertices; i++) {
     graph[i]->visited=0;
   }
 }
 
+
 void traverse(struct Vertex** graph, int vertices, char* source){
   for (size_t i = 0; i < vertices; i++) {
-    if (strcmp(graph[i]->letter,source)==0) {
+    if(strcmp(graph[i]->letter,source)==0){
+      printf("%s ", graph[i]->letter);
       graph[i]->visited=1;
-      struct Vertex* root = 0;
-      struct Vertex* prevRoot = graph[i];
-      struct Edge* current = graph[i]->next;
-      int count=1;
-      //printf("\n");
-      while(count!=vertices){
-        if(root==0) {
-          //find root function that surfs through all vertices
-          root=current->vertex;
-        }
-        if(current->next==0){
-          current=root->next;
-          prevRoot=root;
-          root=prevRoot->next->vertex;
-          continue;
-        }
-
-        if (current->vertex->visited==0) {
-          printf("%s ", current->letter);
-          count++;
-          //printf("%d ", count);
-          current->vertex->visited=1;
-        }
-
-        current=current->next;
+      struct Edge* temp=graph[i]->next;
+      while(temp!=0){
+        printf("%s ", temp->letter);
+        temp->vertex->visited=1;
+        Enqueue(temp->vertex);
+        temp=temp->next;
       }
-      printf("\n");
-      return;
+
+      struct Node* current=qHead->next;
+      temp=current->vertex->next;
+      while(qHead!=0) {
+        while(temp!=0){
+          if (temp->vertex->visited==0) {
+            Enqueue(temp->vertex);
+            printf("%s ", temp->letter);
+          }
+          temp=temp->next;
+        }
+        current=qHead->next;
+        Dequeue();
+      }
+    printf("\n");
+    return;
     }
   }
-}
 
+}
 int main(int argc, char *argv[argc+1]) {
 
   FILE *f;
@@ -293,8 +271,6 @@ int main(int argc, char *argv[argc+1]) {
     head->visited=0;
     graph[i]=head;
 
-    //queue
-    Enqueue(content);
   }
   //read(graph,vertices);
 
@@ -303,8 +279,8 @@ int main(int argc, char *argv[argc+1]) {
   while ((fscanf(f,"%s %s",source,to))!=EOF){
     fill(f,graph,vertices,source, to);
   }
-  readAll(graph,vertices);
-  correspondingVertexTest(graph,vertices,"B");
+  //readAll(graph,vertices);
+  //correspondingVertexTest(graph,vertices,"B");
 
   f = fopen(argv[2],"r");
   if (f==0) {
@@ -313,9 +289,14 @@ int main(int argc, char *argv[argc+1]) {
   }
 
   while (fscanf(f,"%s",source)!=EOF) {
-    printf("%s ",source);
     traverse(graph,vertices,source);
     reset(graph,vertices);
+  }
+
+
+  //readQ();
+  while(qHead!=0){
+    Dequeue();
   }
   freeEverything(graph,vertices);
 }
