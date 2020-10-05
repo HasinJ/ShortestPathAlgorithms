@@ -4,6 +4,7 @@
 
 struct Vertex{
   char *letter;
+  int visited;
   struct Edge* next;
 
 };
@@ -14,6 +15,66 @@ struct Edge{
   struct Edge* next;
   struct Vertex* vertex; //vertex it corresponds with, to make traversal easier
 };
+
+struct Node{
+  char *letter;
+  struct Node* next;
+};
+
+struct Node* qHead=0;
+
+void Delete(char* x){ //should deal with an already sorted list
+  if (qHead==0) return;
+  else{
+    if (strcmp(qHead->letter,x)==0) {
+      struct Node* temp=qHead;
+      qHead=qHead->next;
+      free(temp->letter);
+      free(temp);
+      return;
+    }
+  }
+
+  struct Node* current=qHead;
+  while (strcmp(current->next->letter,x)==1) {
+    current=current->next;
+    if (current->next==0) return;
+  }
+  struct Node* temp=current->next;
+  current->next=current->next->next;
+  free(temp->letter);
+  free(temp);
+
+}
+
+void Push(char* x){
+  if (qHead==0){
+    qHead = calloc(1,sizeof(struct Node));
+    qHead->letter=malloc(20*sizeof(char*));
+    strcpy(qHead->letter,x);
+    return;
+  }
+  struct Node* new = (struct Node*) malloc(sizeof(struct Node));
+  new->letter=malloc(20*sizeof(char*));
+  strcpy(new->letter,x);
+  new->next=qHead;
+  qHead=new;
+}
+
+void Enqueue(char* x){
+  if(qHead==0) {
+    Push(x);
+    return;
+  }
+  struct Node* current=qHead;
+  while(current->next!=0){
+    current=current->next;
+  }
+  current->next = calloc(1,sizeof(struct Node));
+  current->next->letter=malloc(20*sizeof(char*));
+  strcpy(current->next->letter,x);
+  current->next->next = 0;
+}
 
 int compareString(char* a, char* b){
   if (strlen(a)>strlen(b)) return 1;
@@ -124,13 +185,15 @@ void correspondingVertexTest(struct Vertex **graph, int vertices, char* source){
   printf("\n");
   for (size_t i = 0; i < vertices; i++) {
     if(strcmp(graph[i]->letter,source)==0){
-      struct Edge* current = graph[i]->next;
+      struct Edge* current = graph[i]->next->vertex->next;
       while(current!=0){
-        printf("%s\n", current->vertex->letter);
+        printf("%s %d\n", current->vertex->letter,current->vertex->visited);
+
         current=current->next;
       }
     }
   }
+  printf("\n");
 }
 
 void fill(FILE* f, struct Vertex** graph, int vertices, char* source, char* to){
@@ -154,24 +217,48 @@ void fill(FILE* f, struct Vertex** graph, int vertices, char* source, char* to){
   }
 }
 
-/*
-void traverse(struct Vertex** graph, int vertices, char* source){
-
+void reset(struct Vertex** graph, int vertices){
   for (size_t i = 0; i < vertices; i++) {
-    if (graph[i]->letter==source) {
-      printf("%s ", source);
+    graph[i]->visited=0;
+  }
+}
+
+void traverse(struct Vertex** graph, int vertices, char* source){
+  for (size_t i = 0; i < vertices; i++) {
+    if (strcmp(graph[i]->letter,source)==0) {
+      graph[i]->visited=1;
+      struct Vertex* root = 0;
+      struct Edge* current = graph[i]->next;
       int count=1;
-      break;
+      //printf("\n");
+      while(count!=vertices){
+        if (current->vertex->visited==0) {
+          printf("%s ", current->letter);
+          count++;
+          //printf("%d ", count);
+          current->vertex->visited=1;
+        }else{
+          current=current->next;
+          continue;
+        }
+
+        if(root==0) {
+          struct Vertex* prevRoot = current->vertex; //find root function that surfs through all vertices
+          root=current->vertex;
+        }
+        if(current->next==0){
+          current=root->next;
+          root=0;
+          continue;
+        }
+        current=current->next;
+      }
+      printf("\n");
+      return;
     }
   }
-
-  while (count!=vertices) {
-    count++;
-  }
-  printf("%d\n", count);
-
 }
-*/
+
 int main(int argc, char *argv[argc+1]) {
 
   FILE *f;
@@ -189,11 +276,16 @@ int main(int argc, char *argv[argc+1]) {
   for (size_t i = 0; i < vertices; i++) {
     struct Vertex* head=calloc(1, sizeof(struct Vertex));
     char content[20];
+    //graph
     fscanf(f,"%s\n",content);
     head->letter=malloc(20*sizeof(char*));
     strcpy(head->letter,content);
     head->next=0;
+    head->visited=0;
     graph[i]=head;
+
+    //queue
+    Enqueue(content);
   }
   //read(graph,vertices);
 
@@ -203,18 +295,18 @@ int main(int argc, char *argv[argc+1]) {
     fill(f,graph,vertices,source, to);
   }
   readAll(graph,vertices);
+  correspondingVertexTest(graph,vertices,"B");
 
-  /*
   f = fopen(argv[2],"r");
   if (f==0) {
     printf("error\n");
     return EXIT_SUCCESS;
   }
 
-  while (fscanf(f,"%s",source)!=EOF){
+  while (fscanf(f,"%s",source)!=EOF) {
+    printf("%s ",source);
     traverse(graph,vertices,source);
+    reset(graph,vertices);
   }
-  */
-  correspondingVertexTest(graph,vertices,"B");
   freeEverything(graph,vertices);
 }
