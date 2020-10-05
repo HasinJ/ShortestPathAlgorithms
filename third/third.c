@@ -61,6 +61,15 @@ void Push(char* x){
   qHead=new;
 }
 
+void Pop(){
+  if(head==0) return;
+  struct Node* temp = head;
+  head=head->next;
+  free(temp->letter);
+  free(temp);
+  return;
+}
+
 void Enqueue(char* x){
   if(qHead==0) {
     Push(x);
@@ -228,29 +237,29 @@ void traverse(struct Vertex** graph, int vertices, char* source){
     if (strcmp(graph[i]->letter,source)==0) {
       graph[i]->visited=1;
       struct Vertex* root = 0;
+      struct Vertex* prevRoot = graph[i];
       struct Edge* current = graph[i]->next;
       int count=1;
       //printf("\n");
       while(count!=vertices){
+        if(root==0) {
+          //find root function that surfs through all vertices
+          root=current->vertex;
+        }
+        if(current->next==0){
+          current=root->next;
+          prevRoot=root;
+          root=prevRoot->next->vertex;
+          continue;
+        }
+
         if (current->vertex->visited==0) {
           printf("%s ", current->letter);
           count++;
           //printf("%d ", count);
           current->vertex->visited=1;
-        }else{
-          current=current->next;
-          continue;
         }
 
-        if(root==0) {
-          struct Vertex* prevRoot = current->vertex; //find root function that surfs through all vertices
-          root=current->vertex;
-        }
-        if(current->next==0){
-          current=root->next;
-          root=0;
-          continue;
-        }
         current=current->next;
       }
       printf("\n");
