@@ -16,29 +16,54 @@ struct Edge{
   struct Vertex* vertex; //vertex it corresponds with, to make traversal easier
 };
 
-struct Node{
-  struct Vertex* vertex;
-  struct Node* next;
+struct Stack{
+  int top;
+  int max;
+  struct Vertex **items;
 };
 
 struct Vertex* first;
-struct Node* sHead=0; //empty
+struct Stack* stack;
+
+struct Vertex* Peek(){
+  return stack->items[stack->top];
+}
 
 void Pop(){
-  if(sHead==0) return;
-  struct Node* current = sHead;
-  while(current->next->next!=0) current=current->next;
-  struct Node* temp = current->next;
-  current->next=current->next->next;
-  free(temp);
+  if(stack->top==0) return;
+  stack->top--;
   return;
 }
 
 void Push(struct Vertex* vertex){
-  if (sHead==0){
-    sHead = calloc(1,sizeof(struct Node));
-    sHead->vertex=vertex;
+  if (stack->top>stack->max){
+    printf("stack overflow (visited node probably in stack or repitition)\n");
     return;
+  }
+  stack->items[++stack->top]=vertex;
+}
+
+//////////////////////////////////
+///* NEEDS TO TEST FOR ISLANDS*///
+//////////////////////////////////
+
+void dfs(struct Vertex **graph, int vertices){
+  //initialize stack
+  stack = malloc(sizeof(struct Stack));
+  stack->top=0;
+  stack->max=vertices;
+  stack->items=calloc(vertices,sizeof(struct Vertex));
+  Push(first);
+  //printf("top:%s\n", Peek()->letter); //reads top
+  printf("output: %s ", Peek()->letter);
+  Peek()->visited=1;
+
+  while(stack->top!=0){
+    struct Vertex* current = Peek();
+    struct Edge* temp = current->next;
+    while(temp->next!=0){
+
+    }
   }
 }
 
@@ -131,6 +156,8 @@ void freeEverything(struct Vertex** graph,int vertices){
     freeVertex(graph[i]);
   }
   free(graph);
+  free(stack->items);
+  free(stack);
 }
 
 void read(struct Vertex **graph, int vertices){
@@ -153,11 +180,6 @@ void readAll(struct Vertex **graph, int vertices){
     printf("\n");
   }
   return;
-}
-
-void dfs(struct Vertex **graph, int vertices){
-  Push(first);
-  struct Vertex*
 }
 
 int main(int argc, char *argv[argc+1]) {
@@ -201,6 +223,7 @@ int main(int argc, char *argv[argc+1]) {
   printf("\n");
 
   dfs(graph,vertices);
+  printf("\n");
 
   freeEverything(graph,vertices);
   return EXIT_SUCCESS;
