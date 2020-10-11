@@ -54,15 +54,29 @@ void dfs(struct Vertex **graph, int vertices){
   stack->max=vertices;
   stack->items=calloc(vertices,sizeof(struct Vertex));
   Push(first);
+  printf("top %d\n", stack->top);
   //printf("top:%s\n", Peek()->letter); //reads top
   printf("output: %s ", Peek()->letter);
   Peek()->visited=1;
+  struct Vertex* current = Peek();
+  //printf("\nvisited: %d\n", current->next->vertex->visited);
 
   while(stack->top!=0){
-    struct Vertex* current = Peek();
     struct Edge* temp = current->next;
-    while(temp->next!=0){
-
+    while(temp->vertex->visited!=0){
+      temp=temp->next;
+      if (temp==0) {
+        printf("returning\n");
+        return;
+      }
+    }
+    Push(temp->vertex);
+    current=Peek();
+    current->visited=1;
+    printf("%s ", current->letter);
+    if(current->next==0){
+      Pop();
+      current=Peek();
     }
   }
 }
@@ -182,6 +196,10 @@ void readAll(struct Vertex **graph, int vertices){
   return;
 }
 
+struct Vertex* addVertex(char* content){
+
+}
+
 int main(int argc, char *argv[argc+1]) {
   FILE *f;
   f = fopen(argv[1],"r");
@@ -196,19 +214,10 @@ int main(int argc, char *argv[argc+1]) {
   //intiliaze graph
   struct Vertex **graph = calloc(vertices,sizeof(struct Vertex));
   for (size_t i = 0; i < vertices; i++) {
-    struct Vertex* head=calloc(1, sizeof(struct Vertex));
     char content[20];
     fscanf(f,"%s\n",content);
-    //graph[i]=addVertex(content); //on hold because we only need to find the first letter
-    head->letter=malloc(20*sizeof(char*));
-    strcpy(head->letter,content);
-    head->next=0;
-    head->visited=0;
-    graph[i]=head;
-    if(i==0) {
-      first=graph[i];
-      continue;
-    }else if(strcmp(first->letter,graph[i]->letter)>0) first=graph[i];
+    graph[i]=addVertex(content); 
+
 
   }
   read(graph,vertices);
@@ -223,7 +232,7 @@ int main(int argc, char *argv[argc+1]) {
   printf("\n");
 
   dfs(graph,vertices);
-  printf("\n");
+  printf("EXITED\n");
 
   freeEverything(graph,vertices);
   return EXIT_SUCCESS;
