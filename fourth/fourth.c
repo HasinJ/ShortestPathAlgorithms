@@ -16,6 +16,32 @@ struct Edge{
   struct Vertex* vertex; //vertex it corresponds with, to make traversal easier
 };
 
+struct Node{
+  struct Vertex* vertex;
+  struct Node* next;
+};
+
+struct Vertex* first;
+struct Node* sHead=0; //empty
+
+void Pop(){
+  if(sHead==0) return;
+  struct Node* current = sHead;
+  while(current->next->next!=0) current=current->next;
+  struct Node* temp = current->next;
+  current->next=current->next->next;
+  free(temp);
+  return;
+}
+
+void Push(struct Vertex* vertex){
+  if (sHead==0){
+    sHead = calloc(1,sizeof(struct Node));
+    sHead->vertex=vertex;
+    return;
+  }
+}
+
 void insertHere(struct Edge* current, int weight, char* character, struct Vertex* correspondingVertex){
   struct Edge* new = malloc(sizeof(struct Edge));
   new->letter=malloc(20*sizeof(char*));
@@ -34,6 +60,39 @@ void insertHead(struct Vertex* current, int weight, char* character, struct Vert
   new->weight=weight;
   new->next = current->next;
   current->next=new;
+}
+
+void addEdge(struct Vertex* vertex, int weight, char* to, struct Vertex* correspondingVertex) {
+  if(vertex->next==0){ //head
+    vertex->next=malloc(sizeof(struct Edge));
+    vertex->next->letter=malloc(20*sizeof(char*));
+    strcpy(vertex->next->letter,to);
+    vertex->next->vertex=correspondingVertex;
+    vertex->next->weight=weight;
+    vertex->next->next=0;
+    return;
+  } else{ if(strcmp(vertex->next->letter,to)>0){
+    if (strcmp(vertex->next->letter,to)==0) return;
+    insertHead(vertex,weight,to,correspondingVertex);
+    return;
+  }}
+
+  struct Edge* current=vertex->next; //set current as head
+  if (strcmp(current->letter,to)==0) return;
+  while(current->next!=0) {
+    if (strcmp(current->next->letter,to)==0) return;
+    if (strcmp(current->next->letter,to)>0) { //flipping this swaps the list around
+      insertHere(current,weight,to,correspondingVertex);
+      return;
+    }
+    current = current->next;
+  }
+  current->next=malloc(sizeof(struct Edge));
+  current->next->letter=malloc(20*sizeof(char*));
+  strcpy(current->next->letter,to);
+  current->next->vertex=correspondingVertex;
+  current->next->weight=weight;
+  current->next->next=0;
 }
 
 void fill(FILE* f, struct Vertex** graph, int weight, int vertices, char* source, char* to){
@@ -85,6 +144,7 @@ void read(struct Vertex **graph, int vertices){
 
 void readAll(struct Vertex **graph, int vertices){
   printf("\n");
+  printf("first: %s\n", first->letter);
   for (size_t i = 0; i < vertices; i++) {
     printf("%s: ", graph[i]->letter);
     for (struct Edge* current = graph[i]->next; current!=0; current=current->next) {
@@ -95,38 +155,9 @@ void readAll(struct Vertex **graph, int vertices){
   return;
 }
 
-
-void addEdge(struct Vertex* vertex, int weight, char* to, struct Vertex* correspondingVertex) {
-  if(vertex->next==0){ //head
-    vertex->next=malloc(sizeof(struct Edge));
-    vertex->next->letter=malloc(20*sizeof(char*));
-    strcpy(vertex->next->letter,to);
-    vertex->next->vertex=correspondingVertex;
-    vertex->next->weight=weight;
-    vertex->next->next=0;
-    return;
-  } else{ if(strcmp(vertex->next->letter,to)>0){
-    if (strcmp(vertex->next->letter,to)==0) return;
-    insertHead(vertex,weight,to,correspondingVertex);
-    return;
-  }}
-
-  struct Edge* current=vertex->next; //set current as head
-  if (strcmp(current->letter,to)==0) return;
-  while(current->next!=0) {
-    if (strcmp(current->next->letter,to)==0) return;
-    if (strcmp(current->next->letter,to)>0) { //flipping this swaps the list around
-      insertHere(current,weight,to,correspondingVertex);
-      return;
-    }
-    current = current->next;
-  }
-  current->next=malloc(sizeof(struct Edge));
-  current->next->letter=malloc(20*sizeof(char*));
-  strcpy(current->next->letter,to);
-  current->next->vertex=correspondingVertex;
-  current->next->weight=weight;
-  current->next->next=0;
+void dfs(struct Vertex **graph, int vertices){
+  Push(first);
+  struct Vertex*
 }
 
 int main(int argc, char *argv[argc+1]) {
@@ -152,6 +183,11 @@ int main(int argc, char *argv[argc+1]) {
     head->next=0;
     head->visited=0;
     graph[i]=head;
+    if(i==0) {
+      first=graph[i];
+      continue;
+    }else if(strcmp(first->letter,graph[i]->letter)>0) first=graph[i];
+
   }
   read(graph,vertices);
 
@@ -162,7 +198,9 @@ int main(int argc, char *argv[argc+1]) {
     fill(f,graph,weight,vertices,source,to);
   }
   readAll(graph,vertices);
+  printf("\n");
 
+  dfs(graph,vertices);
 
   freeEverything(graph,vertices);
   return EXIT_SUCCESS;
