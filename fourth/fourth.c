@@ -22,7 +22,6 @@ struct Stack{
   struct Vertex **items;
 };
 
-struct Vertex* first;
 struct Stack* stack;
 
 struct Vertex* Peek(){
@@ -43,43 +42,14 @@ void Push(struct Vertex* vertex){
   stack->items[++stack->top]=vertex;
 }
 
-//////////////////////////////////
-///* NEEDS TO TEST FOR ISLANDS*///
-//////////////////////////////////
-
-void dfs(struct Vertex **graph, int vertices){
-  //initialize stack
+void createStack(int vertices){
   stack = malloc(sizeof(struct Stack));
   stack->top=0;
   stack->max=vertices;
-  stack->items=calloc(vertices,sizeof(struct Vertex));
-  Push(first);
-  printf("top %d\n", stack->top);
-  //printf("top:%s\n", Peek()->letter); //reads top
-  printf("output: %s ", Peek()->letter);
-  Peek()->visited=1;
-  struct Vertex* current = Peek();
-  //printf("\nvisited: %d\n", current->next->vertex->visited);
-
-  while(stack->top!=0){
-    struct Edge* temp = current->next;
-    while(temp->vertex->visited!=0){
-      temp=temp->next;
-      if (temp==0) {
-        printf("returning\n");
-        return;
-      }
-    }
-    Push(temp->vertex);
-    current=Peek();
-    current->visited=1;
-    printf("%s ", current->letter);
-    if(current->next==0){
-      Pop();
-      current=Peek();
-    }
-  }
+  stack->items=malloc(vertices*sizeof(struct Vertex));
 }
+
+
 
 void insertHere(struct Edge* current, int weight, char* character, struct Vertex* correspondingVertex){
   struct Edge* new = malloc(sizeof(struct Edge));
@@ -170,6 +140,9 @@ void freeEverything(struct Vertex** graph,int vertices){
     freeVertex(graph[i]);
   }
   free(graph);
+  while (stack->top!=0) {
+    Pop();
+  }
   free(stack->items);
   free(stack);
 }
@@ -183,9 +156,17 @@ void read(struct Vertex **graph, int vertices){
   return;
 }
 
+void readStack(){
+  printf("stack: ");
+  for (size_t i = stack->top; i!=0; i--) {
+    printf("%s ", stack->items[i]->letter);
+  }
+  //printf("\ntop: #%d %s",stack->top, stack->items[stack->top]->letter);
+  printf("\n");
+}
+
 void readAll(struct Vertex **graph, int vertices){
   printf("\n");
-  printf("first: %s\n", first->letter);
   for (size_t i = 0; i < vertices; i++) {
     printf("%s: ", graph[i]->letter);
     for (struct Edge* current = graph[i]->next; current!=0; current=current->next) {
@@ -196,8 +177,63 @@ void readAll(struct Vertex **graph, int vertices){
   return;
 }
 
-struct Vertex* addVertex(char* content){
+void addVertex(struct Vertex **graph, int vertices, char* content, int position){
+  struct Vertex* vertex=calloc(1, sizeof(struct Vertex));
+  vertex->letter=malloc(20*sizeof(char*));
+  strcpy(vertex->letter,content);
+  vertex->next=0;
+  vertex->visited=0;
+  if (graph[0]==0){
+    graph[position]=vertex;
+    return;
+  }else if(strcmp(graph[position-1]->letter,content)>0){
+    for (size_t i = position; i!=-1; i--) {
+      if(i==0) return;
+      if(strcmp(graph[i-1]->letter,content)<0){
+        graph[i]=vertex;
+        return;
+      }
+      graph[i]=graph[i-1];
+    }
+  }
 
+  graph[position]=vertex;
+}
+
+//////////////////////////////////
+///* NEEDS TO TEST FOR ISLANDS*///
+//////////////////////////////////
+
+void dfs(struct Vertex **graph, int vertices, struct Vertex* current){
+
+  while(stack->top!=0){
+    struct Edge* temp = current->next;
+    while(temp->vertex->visited!=0){
+      temp=temp->next;
+      if (temp==0){
+        current=Peek();
+        readStack();
+        temp=current->next;
+        while(1){
+          if(temp->vertex->visited==0){
+            Pop();
+            break;
+          }
+          temp=temp->next;
+        }
+        dfs(graph,vertices,current);
+        return;}
+    }
+
+    Push(temp->vertex);
+    current=Peek();
+    current->visited=1;
+    printf("vis :%s\n ", current->letter);
+    while(current->next==0){
+      Pop();
+      current=Peek();
+    }
+  }
 }
 
 int main(int argc, char *argv[argc+1]) {
@@ -216,11 +252,9 @@ int main(int argc, char *argv[argc+1]) {
   for (size_t i = 0; i < vertices; i++) {
     char content[20];
     fscanf(f,"%s\n",content);
-    graph[i]=addVertex(content); 
-
-
+    addVertex(graph,vertices,content,i);
   }
-  read(graph,vertices);
+  //read(graph,vertices);
 
   //add edges
   char source[20],to[20];
@@ -231,8 +265,20 @@ int main(int argc, char *argv[argc+1]) {
   readAll(graph,vertices);
   printf("\n");
 
-  dfs(graph,vertices);
-  printf("EXITED\n");
+  createStack(vertices);
+
+  Push(graph[0]);
+  printf("%s ", Peek()->letter);
+  Peek()->visited=1;
+  dfs(graph,vertices,graph[0]);
+
+  for (size_t i = 0; i < vertices; i++) {
+    if (graph[i]->visited) continue;
+    dfs(graph,vertices,graph[i]);
+  }
+  printf("\n");
+  readStack();
+
 
   freeEverything(graph,vertices);
   return EXIT_SUCCESS;
