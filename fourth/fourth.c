@@ -208,19 +208,19 @@ void dfs(struct Vertex **graph, int vertices, struct Vertex* current){
 
   while(stack->top!=0){
     struct Edge* temp = current->next;
+    if (temp==0){
+      Pop();
+      current=Peek();
+      //readStack();
+      dfs(graph,vertices,current);
+      return;}
+
     while(temp->vertex->visited!=0){
       temp=temp->next;
       if (temp==0){
+        Pop();
         current=Peek();
-        readStack();
-        temp=current->next;
-        while(1){
-          if(temp->vertex->visited==0){
-            Pop();
-            break;
-          }
-          temp=temp->next;
-        }
+        //readStack();
         dfs(graph,vertices,current);
         return;}
     }
@@ -228,7 +228,7 @@ void dfs(struct Vertex **graph, int vertices, struct Vertex* current){
     Push(temp->vertex);
     current=Peek();
     current->visited=1;
-    printf("vis :%s\n ", current->letter);
+    printf("%s ", current->letter);
     while(current->next==0){
       Pop();
       current=Peek();
@@ -262,7 +262,7 @@ int main(int argc, char *argv[argc+1]) {
   while ((fscanf(f,"%s %s %d",source,to,&weight))!=EOF){
     fill(f,graph,weight,vertices,source,to);
   }
-  readAll(graph,vertices);
+  //readAll(graph,vertices);
   printf("\n");
 
   createStack(vertices);
@@ -273,11 +273,15 @@ int main(int argc, char *argv[argc+1]) {
   dfs(graph,vertices,graph[0]);
 
   for (size_t i = 0; i < vertices; i++) {
-    if (graph[i]->visited) continue;
-    dfs(graph,vertices,graph[i]);
+    if (graph[i]->visited==0) {
+      Push(graph[i]);
+      printf("%s ", Peek()->letter);
+      Peek()->visited=1;
+      dfs(graph,vertices,graph[i]);
+    }
   }
   printf("\n");
-  readStack();
+  //readStack();
 
 
   freeEverything(graph,vertices);
