@@ -18,6 +18,11 @@ struct Edge{
   struct Vertex* vertex; //vertex it corresponds with, to make traversal easier
 };
 
+struct TopSet{
+  struct Vertex **items;
+  int count;
+};
+
 struct Stack{
   int top;
   int max;
@@ -25,17 +30,17 @@ struct Stack{
 };
 
 struct Stack* IndegreeStack;
+struct TopSet* set;
 
-void Pop(struct Stack* stack){
-  if(stack->top==0) return;
-  stack->top--;
-  return;
+struct Vertex* Pop(struct Stack* stack){
+  if(stack->top==0) exit(EXIT_FAILURE);
+  return stack->items[stack->top--];
 }
 
 void Push(struct Stack* stack,struct Vertex* vertex){
-  if (stack->top>stack->max){
+  if (stack->top+1>stack->max){
     printf("stack overflow (visited node probably in stack or repitition)\n");
-    return;
+    exit(EXIT_FAILURE);
   }
   stack->items[++stack->top]=vertex;
 }
@@ -147,10 +152,15 @@ void freeVertex(struct Vertex* x){
   return;
 }
 
-void freeEverything(struct Vertex** graph,int vertices){
+void freeEverything(struct Vertex** graph, int vertices){
   for (size_t i = 0; i < vertices; i++) {
     freeVertex(graph[i]);
   }
+  free(set->items);
+  free(set);
+  while (IndegreeStack->top!=0) IndegreeStack->top--;
+  free(IndegreeStack->items);
+  free(IndegreeStack);
   free(graph);
 }
 
@@ -174,6 +184,11 @@ void readAll(struct Vertex **graph, int vertices){
     }
     printf("degree: %d\n", graph[i]->degree);
   }
+  printf("Top Order: ");
+  for (size_t i = 0; i < set->count; i++) {
+    printf("%s ", set->items[i]->letter);
+  }
+  printf("\n");
 }
 
 void addVertex(struct Vertex **graph, int vertices, char* content, int position){
@@ -236,6 +251,26 @@ void fill(struct Vertex **graph, int vertices, char* source, char* to, int weigh
   }
 }
 
+void TopologicalSort(struct Vertex** graph, int vertices){
+  degree(graph,vertices);
+  IndegreeStack = createStack(IndegreeStack,vertices);
+  set = malloc(sizeof(struct TopSet));
+  set->items=calloc(vertices,sizeof(struct Vertex));
+  set->count=0;
+  int i=0;
+  while(set->items[vertices-1]==0){
+    for (size_t j = 0; j < vertices; j++) {
+      if(graph[j]->degree==i) Push(IndegreeStack,graph[j]);
+    }
+    if(IndegreeStack->top==0) continue;
+    while(IndegreeStack->top!=0){
+      struct Vertex* temp = Pop(IndegreeStack);
+      set->items[set->count++]=temp;
+    }
+    i++;
+  }
+}
+
 int main(int argc, char *argv[argc+1]) {
 
   FILE *f;
@@ -263,11 +298,8 @@ int main(int argc, char *argv[argc+1]) {
   while ((fscanf(f,"%s %s %d",source,to,&weight))!=EOF){
     fill(graph,vertices,source,to,weight);
   }
-  degree(graph,vertices);
+  TopologicalSort(graph,vertices);
   readAll(graph,vertices);
-
-  IndegreeStack = createStack(IndegreeStack,vertices);
-
   freeEverything(graph,vertices);
   return EXIT_SUCCESS;
 }
