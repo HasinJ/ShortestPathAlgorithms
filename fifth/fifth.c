@@ -186,6 +186,16 @@ void read(struct Vertex **graph, int vertices){
   return;
 }
 
+void readShortestDist(struct Vertex** graph){
+  for (size_t i = 0; i < set->count; i++) {
+    printf("%s-->",graph[i]->letter);
+    if(graph[i]->distance==INT_MAX) {
+      printf("INF\n");
+      continue;}
+    printf("%d\n", graph[i]->distance);
+  }
+}
+
 void readTopSet(){
   for (size_t i = 0; i < set->count; i++) {
     printf("%s-->",set->items[i]->letter);
@@ -305,29 +315,69 @@ void resetTopSet(){
   }
 }
 
-void findDistance(char* src){
+void findDistance(struct Vertex** graph, char* src){
   resetTopSet();
+  printf("\nfinding distance for %s...\n", src);
+
+  if (strcmp(set->items[set->count-1]->letter,src)==0){
+    printf("this is the last element\n");
+    set->items[set->count-1]->distance=0;
+    return;
+  }
+
   int found=0;
   for (size_t i = 0; i < set->count; i++) {
-    if(strcmp(set->items[i]->letter,src)==1 && found==0) {
-      printf("%s doesnt match %s\n", set->items[i]->letter, src);
-      continue;}
-    else if(strcmp(set->items[i]->letter,src)==0 && found==0) {
-      printf("%s matches %s\n", set->items[i]->letter, src);
+    if(strcmp(set->items[i]->letter,src)==0 && found==0) {
       found=1;
       set->items[i]->distance=0;
       continue;
     }
-    struct Edge* temp = set->items[i]->next;
-    while(temp!=0){
-      int olddistance=temp->vertex->distance;
-      int newdistance;
-      if(olddistance==INT_MAX) newdistance=0+temp->weight;
-      else newdistance=olddistance+temp->weight;
-      if(newdistance<olddistance) temp->vertex->distance=newdistance;
+    if (found==1){
+      //current = set->items[i] //current vertex
+      struct Edge* temp = set->items[i]->next;
+      while(temp!=0){
+        int olddistance=set->items[i]->distance;
+        int newdistance;
+        if(olddistance==INT_MAX) newdistance=0+temp->weight;
+        else newdistance=olddistance+temp->weight;
+        if(newdistance<olddistance) temp->vertex->distance=newdistance;
+        temp=temp->next;
+      }}
+  }
+  readTopSet();
+  //readShortestDist(graph);
+}
+
+void dfs(struct Vertex* current){
+  struct Stack* stack;
+  stack = createStack(stack);
+  while(stack->top!=0){
+    struct Edge* temp = current->next;
+    if (temp==0){
+      Pop();
+      current=Peek();
+      //readStack();
+      dfs(graph,vertices,current);
+      return;}
+
+    while(temp->vertex->visited!=0){
       temp=temp->next;
+      if (temp==0){
+        Pop();
+        current=Peek();
+        //readStack();
+        dfs(graph,vertices,current);
+        return;}
     }
 
+    Push(temp->vertex);
+    current=Peek();
+    current->visited=1;
+    printf("%s ", current->letter);
+    while(current->next==0){
+      Pop();
+      current=Peek();
+    }
   }
 }
 
@@ -360,10 +410,18 @@ int main(int argc, char *argv[argc+1]) {
   //TopSort
   TopologicalSort(graph,vertices);
   readAll(graph,vertices);
-  char* finddistancefor="C";
-  printf("\nfinding distance for %s...\n", finddistancefor);
-  findDistance(finddistancefor);
-  readTopSet();
+
+  f = fopen(argv[2],"r");
+  if (f==0) {
+    printf("error\n");
+    return EXIT_SUCCESS;
+  }
+
+  //distances
+  printf("starting set:\n");
+  readShortestDist(graph);
+  findDistance(graph,"M");
+
   freeEverything(graph,vertices);
   return EXIT_SUCCESS;
 }
