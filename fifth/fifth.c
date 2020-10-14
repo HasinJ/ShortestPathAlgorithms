@@ -215,6 +215,7 @@ void readShortestDist(struct Vertex** graph){
 
 void readTopSet(struct TopSet* set){
   for (size_t i = 0; i < set->count; i++) {
+    if(set->items[i]==0) continue;
     printf("%s-->",set->items[i]->letter);
     if(set->items[i]->distance==INT_MAX) {
       printf("INF\n");
@@ -353,8 +354,14 @@ void dfs(struct TopSet* topset, struct Stack* stack, struct Vertex* current){
 
     Push(stack,temp->vertex);
     current=Peek(stack);
-    printf("%s ", current->letter);
-    topset->items[topset->count++]=current;
+
+    for (size_t i = 0; i < set->count; i++) {
+      if (strcmp(set->items[i]->letter,current->letter)==0) {
+        topset->items[i]=current;
+        topset->count++;
+      }
+    }
+
     current->visited=1;
     while(current->next==0){
       RemoveTop(stack);
@@ -370,25 +377,27 @@ void fillTempSet(struct TopSet* tempSet, struct Vertex* root){
 
   Push(DepthStack,root);
   Peek(DepthStack)->visited=1;
-  printf("\n%s ", Peek(DepthStack)->letter);
   tempSet->items[tempSet->count++]=Peek(DepthStack);
   dfs(tempSet,DepthStack,root);
 
   for (size_t i = 0; i < tempSet->count; i++) {
     //printf("%s\n", tempSet->items[i]->letter);
+    if(tempSet->items[i]==0) continue;
     struct Edge* temp = tempSet->items[i]->next;
     while(temp!=0){
       //tempSet->items[i]; //Q
+      if(strcmp(temp->letter,"P")==0) printf("temp: %s\n", temp->letter);
       //printf("temp: %s\n", temp->letter); //R
       int currentdistance=tempSet->items[i]->distance;
       int newdistance;
       if(currentdistance==INT_MAX) newdistance=0+temp->weight;
       if(currentdistance!=INT_MAX) newdistance=currentdistance+temp->weight;
+      if(strcmp(temp->letter,"P")==0) printf("tempOld: %d\n", currentdistance);
+      if(strcmp(temp->letter,"P")==0) printf("tempNew: %d\n", newdistance);
       if(newdistance<temp->vertex->distance) temp->vertex->distance=newdistance;
       temp=temp->next;
     }
   }
-
   free(DepthStack->items);
   free(DepthStack);
 }
@@ -397,7 +406,6 @@ void ShortestPath(char* src){
   printf("\nfinding distance for %s...\n", src);
 
   if (strcmp(set->items[set->count-1]->letter,src)==0){
-    printf("this is the last element\n");
     set->items[set->count-1]->distance=0;
     return;
   }
@@ -413,7 +421,6 @@ void ShortestPath(char* src){
       break;
     }
   }
-  //readTopSet(tempSet);
   printf("\n");
   free(tempSet->items);
   free(tempSet);
