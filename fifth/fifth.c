@@ -5,7 +5,7 @@
 
 struct Vertex{
   char *letter;
-  int distance, degree;
+  int distance, degree, visited;
   struct Edge* next;
   struct Edge* prev;
 };
@@ -37,6 +37,12 @@ struct Vertex* Pop(struct Stack* stack){
   return stack->items[stack->top--];
 }
 
+void RemoveTop(struct Stack* stack){
+  if(stack->top==0) exit(EXIT_FAILURE);
+  stack->top--;
+  return;
+}
+
 void Push(struct Stack* stack,struct Vertex* vertex){
   if (stack->top+1>stack->max){
     printf("stack overflow (visited node probably in stack or repitition)\n");
@@ -45,12 +51,23 @@ void Push(struct Stack* stack,struct Vertex* vertex){
   stack->items[++stack->top]=vertex;
 }
 
+struct Vertex* Peek(struct Stack* stack){
+  return stack->items[stack->top];
+}
+
 struct Stack* createStack(struct Stack* stack, int vertices){
   stack = malloc(sizeof(struct Stack));
   stack->top=0;
   stack->max=vertices;
   stack->items=malloc(vertices*sizeof(struct Vertex));
   return stack;
+}
+
+struct TopSet* createTopSet(struct TopSet* topset, int vertices){
+  topset = malloc(sizeof(struct TopSet));
+  topset->items=calloc(vertices,sizeof(struct Vertex));
+  topset->count=0;
+  return topset;
 }
 
 void insertHere(struct Edge* current, struct Vertex* correspondingVertex, char* character, int weight){
@@ -196,7 +213,7 @@ void readShortestDist(struct Vertex** graph){
   }
 }
 
-void readTopSet(){
+void readTopSet(struct TopSet* set){
   for (size_t i = 0; i < set->count; i++) {
     printf("%s-->",set->items[i]->letter);
     if(set->items[i]->distance==INT_MAX) {
@@ -240,6 +257,7 @@ void addVertex(struct Vertex **graph, int vertices, char* content, int position)
   strcpy(vertex->letter,content);
   vertex->next=0;
   vertex->degree=0;
+  vertex->visited=0;
   vertex->distance=INT_MAX;
   if (graph[0]==0){
     graph[position]=vertex;
@@ -262,7 +280,6 @@ void addVertex(struct Vertex **graph, int vertices, char* content, int position)
 }
 
 void fill(struct Vertex **graph, int vertices, char* source, char* to, int weight){
-
   //add edges
   struct Vertex* corr=0; //corresponding vertex
   for (size_t i = 0; i < vertices; i++) {
@@ -286,9 +303,7 @@ void fill(struct Vertex **graph, int vertices, char* source, char* to, int weigh
 void TopologicalSort(struct Vertex** graph, int vertices){
   degree(graph,vertices);
   IndegreeStack = createStack(IndegreeStack,vertices);
-  set = malloc(sizeof(struct TopSet));
-  set->items=calloc(vertices,sizeof(struct Vertex));
-  set->count=0;
+  set = createTopSet(set, vertices);
   int i=0;
   while(set->items[vertices-1]==0){
     for (size_t j = 0; j < vertices; j++) {
@@ -309,14 +324,76 @@ void TopologicalSort(struct Vertex** graph, int vertices){
   }
 }
 
-void resetTopSet(){
-  for (size_t i = 0; i < set->count; i++) {
-    set->items[i]->distance=INT_MAX;
+void resetTopSet(struct Vertex** graph, int vertices){
+  for (size_t i = 0; i < vertices; i++) {
+    graph[i]->distance=INT_MAX;
+    graph[i]->visited=0;
   }
 }
 
-void findDistance(struct Vertex** graph, char* src){
-  resetTopSet();
+void dfs(struct TopSet* topset, struct Stack* stack, struct Vertex* current){
+  while(stack->top!=0){
+    struct Edge* temp = current->next;
+    if (temp==0){
+      RemoveTop(stack);
+      current=Peek(stack);
+      //readStack();
+      dfs(topset,stack,current);
+      return;}
+
+    while(temp->vertex->visited!=0){
+      temp=temp->next;
+      if (temp==0){
+        RemoveTop(stack);
+        current=Peek(stack);
+        //readStack();
+        dfs(topset,stack,current);
+        return;}
+    }
+
+    Push(stack,temp->vertex);
+    current=Peek(stack);
+    printf("%s ", current->letter);
+    topset->items[topset->count++]=current;
+    current->visited=1;
+    while(current->next==0){
+      RemoveTop(stack);
+      current=Peek(stack);
+    }
+  }
+  printf("\n");
+}
+
+void fillTempSet(struct TopSet* tempSet, struct Vertex* root){
+  struct Stack* DepthStack=0;
+  DepthStack = createStack(DepthStack,set->count);
+
+  Push(DepthStack,root);
+  Peek(DepthStack)->visited=1;
+  printf("\n%s ", Peek(DepthStack)->letter);
+  tempSet->items[tempSet->count++]=Peek(DepthStack);
+  dfs(tempSet,DepthStack,root);
+
+  for (size_t i = 0; i < tempSet->count; i++) {
+    //printf("%s\n", tempSet->items[i]->letter);
+    struct Edge* temp = tempSet->items[i]->next;
+    while(temp!=0){
+      //tempSet->items[i]; //Q
+      //printf("temp: %s\n", temp->letter); //R
+      int currentdistance=tempSet->items[i]->distance;
+      int newdistance;
+      if(currentdistance==INT_MAX) newdistance=0+temp->weight;
+      if(currentdistance!=INT_MAX) newdistance=currentdistance+temp->weight;
+      if(newdistance<temp->vertex->distance) temp->vertex->distance=newdistance;
+      temp=temp->next;
+    }
+  }
+
+  free(DepthStack->items);
+  free(DepthStack);
+}
+
+void ShortestPath(char* src){
   printf("\nfinding distance for %s...\n", src);
 
   if (strcmp(set->items[set->count-1]->letter,src)==0){
@@ -326,58 +403,30 @@ void findDistance(struct Vertex** graph, char* src){
   }
 
   int found=0;
+  struct TopSet* tempSet = 0;
+  tempSet=createTopSet(tempSet,set->count);
   for (size_t i = 0; i < set->count; i++) {
     if(strcmp(set->items[i]->letter,src)==0 && found==0) {
       found=1;
       set->items[i]->distance=0;
-      continue;
+      fillTempSet(tempSet,set->items[i]);
+      break;
     }
-    if (found==1){
-      //current = set->items[i] //current vertex
-      struct Edge* temp = set->items[i]->next;
-      while(temp!=0){
-        int olddistance=set->items[i]->distance;
-        int newdistance;
-        if(olddistance==INT_MAX) newdistance=0+temp->weight;
-        else newdistance=olddistance+temp->weight;
-        if(newdistance<olddistance) temp->vertex->distance=newdistance;
-        temp=temp->next;
-      }}
   }
-  readTopSet();
+  //readTopSet(tempSet);
+  printf("\n");
+  free(tempSet->items);
+  free(tempSet);
   //readShortestDist(graph);
 }
 
-void dfs(struct Vertex* current){
-  struct Stack* stack;
-  stack = createStack(stack);
-  while(stack->top!=0){
-    struct Edge* temp = current->next;
-    if (temp==0){
-      Pop();
-      current=Peek();
-      //readStack();
-      dfs(graph,vertices,current);
-      return;}
-
-    while(temp->vertex->visited!=0){
-      temp=temp->next;
-      if (temp==0){
-        Pop();
-        current=Peek();
-        //readStack();
-        dfs(graph,vertices,current);
-        return;}
-    }
-
-    Push(temp->vertex);
-    current=Peek();
-    current->visited=1;
-    printf("%s ", current->letter);
-    while(current->next==0){
-      Pop();
-      current=Peek();
-    }
+void readAnswer(struct Vertex** graph,int vertices){
+  for (size_t i = 0; i < vertices; i++) {
+    printf("%s-->",graph[i]->letter);
+    if(graph[i]->distance==INT_MAX) {
+      printf("INF\n");
+      continue;}
+    printf("%d\n", graph[i]->distance);
   }
 }
 
@@ -418,9 +467,19 @@ int main(int argc, char *argv[argc+1]) {
   }
 
   //distances
-  printf("starting set:\n");
-  readShortestDist(graph);
-  findDistance(graph,"M");
+  //printf("starting set:\n");
+  //readShortestDist(graph);
+  ShortestPath("B");
+  readAnswer(graph,vertices);
+
+  /*
+  while(fscanf(f,"%s",source)!=EOF) {
+    resetTopSet(graph,vertices);
+    ShortestPath(source);
+    readAnswer(graph,vertices);
+  }
+  */
+
 
   freeEverything(graph,vertices);
   return EXIT_SUCCESS;
