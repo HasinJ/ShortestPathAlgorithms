@@ -223,6 +223,7 @@ void reset(struct Vertex** graph, int vertices){
     graph[i]->distance = INT_MAX;
     graph[i]->visited = 0;
   }
+
 }
 
 void visit(struct Vertex* current){
@@ -244,7 +245,7 @@ void visit(struct Vertex* current){
 
 struct Vertex* smallestUnvisited(struct Vertex** graph, struct Vertex* current,int vertices){
   struct Vertex* smallest=0;
-  for (size_t j = 0; j < vertices-visitedCount; j++) {
+  for (size_t j = 0; j < vertices; j++) {
     for (size_t i = 0; i < vertices; i++) {
       if(graph[i]->visited==1) continue;
       if(graph[i]->distance==INT_MAX) continue;
@@ -320,10 +321,10 @@ int main(int argc, char *argv[argc+1]) {
   }
 
   while(fscanf(f,"%s",source)!=EOF){
-    printf("\n");
     reset(graph,vertices);
     Dijkstra(graph,vertices,source);
     readAnswer(graph,vertices);
+    printf("\n");
   }
 
   freeEverything(graph,vertices);
