@@ -49,6 +49,12 @@ struct Vertex* Peek(struct Stack* stack){
   return stack->items[stack->top];
 }
 
+void RemoveTop(struct Stack* stack){
+  if(stack->top==0) exit(EXIT_FAILURE);
+  stack->top--;
+  return;
+}
+
 struct Stack* createStack(struct Stack* stack, int vertices){
   stack = malloc(sizeof(struct Stack));
   stack->top=0;
@@ -62,12 +68,6 @@ struct TopSet* createTopSet(struct TopSet* topset, int vertices){
   topset->items=calloc(vertices,sizeof(struct Vertex));
   topset->count=0;
   return topset;
-}
-
-void RemoveTop(struct Stack* stack){
-  if(stack->top==0) exit(EXIT_FAILURE);
-  stack->top--;
-  return;
 }
 
 void insertHere(struct Edge* current, struct Vertex* correspondingVertex, char* character, int weight){
@@ -291,14 +291,14 @@ void fill(struct Vertex **graph, int vertices, char* source, char* to, int weigh
   }
 }
 
-void dfs(struct TopSet* topset, struct Stack* stack, struct Vertex* current){
+void dfsDAG(struct TopSet* topset, struct Stack* stack, struct Vertex* current){
   while(stack->top!=0){
     struct Edge* temp = current->next;
     if (temp==0){
       RemoveTop(stack);
       current=Peek(stack);
       //readStack();
-      dfs(topset,stack,current);
+      dfsDAG(topset,stack,current);
       return;}
 
     while(temp->vertex->visited!=0){
@@ -307,7 +307,7 @@ void dfs(struct TopSet* topset, struct Stack* stack, struct Vertex* current){
         RemoveTop(stack);
         current=Peek(stack);
         //readStack();
-        dfs(topset,stack,current);
+        dfsDAG(topset,stack,current);
         return;}
     }
 
@@ -331,7 +331,7 @@ void fillTempSet(struct TopSet* tempSet, struct Vertex* root){
   Push(DepthStack,root);
   Peek(DepthStack)->visited=1;
   tempSet->items[tempSet->count++]=Peek(DepthStack);
-  dfs(tempSet,DepthStack,root);
+  dfsDAG(tempSet,DepthStack,root);
 
   free(DepthStack->items);
   free(DepthStack);
@@ -370,6 +370,13 @@ void resetTopSet(){
   }
 }
 
+void resetVisited(struct Vertex** graph, int vertices){
+  for (size_t i = 0; i < vertices; i++) {
+    graph[i]->visited = 0;
+  }
+
+}
+
 void findDistance(struct TopSet* tempSet,int i){
   for (size_t j = 0; j < tempSet->count; j++) {
     if(strcmp(set->items[i]->letter, tempSet->items[j]->letter)==0) break;
@@ -383,7 +390,7 @@ void findDistance(struct TopSet* tempSet,int i){
     current = adjacent->vertex->distance;
     from = set->items[i]->distance;
 
-    distance = adjacent->weight+from;
+    distance = adjacent->weight + from;
     if(current==INT_MAX) adjacent->vertex->distance=distance;
     if(distance<current) adjacent->vertex->distance=distance;
 
@@ -428,6 +435,63 @@ void readAnswer(struct Vertex** graph,int vertices){
   }
 }
 
+
+void dfs(struct Stack* CycleStack,struct Vertex* root,struct Vertex* current){
+
+  while(CycleStack->top!=0){
+    struct Edge* temp = current->next;
+    if (temp==0){
+      Pop(CycleStack);
+      current=Peek(CycleStack);
+      //readStack();
+      dfs(CycleStack,root,current);
+      return;}
+
+    while(temp->vertex->visited!=0){
+      if(temp->vertex->visited==1 && strcmp(temp->letter,root->letter)==0) {
+        //printf("(%s) ", temp->letter);
+        printf("\nCYCLE\n");
+        exit(EXIT_FAILURE);
+      };
+      temp=temp->next;
+      if (temp==0){
+        Pop(CycleStack);
+        current=Peek(CycleStack);
+        //readStack();
+        dfs(CycleStack,root,current);
+        return;}
+    }
+
+    Push(CycleStack,temp->vertex);
+    current=Peek(CycleStack);
+    current->visited=1;
+    //printf("%s ", current->letter);
+    while(current->next==0){
+      Pop(CycleStack);
+      current=Peek(CycleStack);
+    }
+  }
+}
+
+void checkLoop(struct Vertex** graph, int vertices){
+
+  struct Stack* CycleStack=0;
+  CycleStack=createStack(CycleStack,vertices);
+
+  for (size_t i = 0; i < vertices; i++) {
+    resetVisited(graph,vertices);
+    Push(CycleStack,graph[i]);
+    //printf("current: %s ", Peek()->letter);
+    Peek(CycleStack)->visited=1;
+    dfs(CycleStack,graph[i],graph[i]);
+  }
+
+  resetVisited(graph,vertices);
+  free(CycleStack->items);
+  free(CycleStack);
+  printf("\n");
+}
+
 int main(int argc, char *argv[argc+1]) {
 
   FILE *f;
@@ -453,6 +517,8 @@ int main(int argc, char *argv[argc+1]) {
   int weight;
   char source[20],to[20];
   while ((fscanf(f,"%s %s %d",source,to,&weight))!=EOF) fill(graph,vertices,source,to,weight);
+
+  checkLoop(graph,vertices);
 
   //TopSort
   TopologicalSort(graph,vertices);
